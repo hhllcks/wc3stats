@@ -40,8 +40,9 @@ except KeyError:
 
 app = Dash(name=app_name, server=server, csrf_protect=False)
 app.config['suppress_callback_exceptions']=True
-external_js = []
+app.config['include_asset_files']=True
 
+external_js = []
 external_css = [
     # dash stylesheet
     "https://codepen.io/chriddyp/pen/bWLwgP.css",
@@ -51,12 +52,10 @@ external_css = [
 
 theme = {"font-family": "Raleway", "background-color": "#e0e0e0"}
 
-
 def create_header():
     header_style = {"background-color": theme["background-color"], "padding": "1.5rem"}
     header = html.Header(html.H1(children=app_name, style=header_style))
     return header
-
 
 def create_content():
     content = html.Div(
@@ -103,19 +102,23 @@ def create_content():
 
 def serve_layout():
     layout = html.Div(
-        children=[create_header(), create_content()],
+        children=[
+            create_header(), 
+            create_content()
+        ],
         className="container",
         style={"font-family": theme["font-family"]},
     )
     return layout
 
-
-app.layout = serve_layout()
+# external files
 for js in external_js:
     app.scripts.append_script({"external_url": js})
 for css in external_css:
     app.css.append_css({"external_url": css})
 
+# create layout
+app.layout = serve_layout()
 
 # callbacks
 @app.callback(Output('replayUpload', 'disabled'),
