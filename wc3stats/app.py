@@ -41,6 +41,7 @@ except KeyError:
 app = Dash(name=app_name, server=server, csrf_protect=False)
 app.config['suppress_callback_exceptions']=True
 app.config['include_asset_files']=True
+app.title = "WC3 Stats"
 
 external_js = []
 external_css = [
