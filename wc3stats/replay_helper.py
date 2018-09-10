@@ -1,6 +1,6 @@
 import os
 import datetime
-import w3g
+from .w3g import File
 import json
 
 path_to_replays = '/Users/hen/Boxcryptor/Google Drive/W3'
@@ -74,7 +74,7 @@ def format_length(ms):
 
 def load_single_replay(file, filename, date):
     try:
-        rep = w3g.File(file)
+        rep = File(file)
         if rep.game_type == modes['1on1']:
             slots = parse_slot_records(rep.slot_records)
             return {
@@ -100,7 +100,7 @@ def load_replays(p):
 
     for f in yieldFiles(p):
         try:
-            rep = w3g.File(f)
+            rep = File(f)
             if rep.game_type == modes['1on1']:
                 slots = parse_slot_records(rep.slot_records)
                 replays.append({
