@@ -1,7 +1,7 @@
 import os
 from .replay_handler import load_replay, get_statistics
-from .stats_layouter import get_stats_layout, ALL_RACES
-from .callbacks import create_mainrace_tab_callback, create_total_tab_callback, create_race_tab_callback, create_map_tab_callback
+from .stats_layouter import get_stats_layout, ALL_RACES, ALL_MAPS
+from .callbacks import create_mainrace_tab_callback, create_total_tab_callback, create_race_tab_callback, create_map_tab_callback, create_race_tab_dropdown_callback, create_map_tab_dropdown_callback
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.plotly as py
@@ -18,8 +18,6 @@ load_dotenv(DOTENV_PATH)
 if "DYNO" in os.environ:
     # the app is on Heroku
     debug = False
-# google analytics with the tracking ID for this app
-# external_js.append('https://codepen.io/jackdbd/pen/rYmdLN.js')
 else:
     debug = True
     dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -38,24 +36,36 @@ try:
 except KeyError:
     raise ImproperlyConfigured("SECRET KEY not set in .env:")
 
-app = Dash(name=app_name, server=server, csrf_protect=False)
+metas = [
+    {'name': 'viewport', 'content': 'width=device-width, initial-scale=1, shrink-to-fit=no'},
+]
+app = Dash(
+    name=app_name, 
+    server=server, 
+    csrf_protect=False,
+    meta_tags=metas,
+)
 app.config['suppress_callback_exceptions']=True
 app.config['include_asset_files']=True
 app.title = "WC3 Stats"
 
-external_js = []
+external_js = [
+    #"https://code.jquery.com/jquery-3.2.1.slim.min.js",
+    #"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js",
+    #"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+]
 external_css = [
     # dash stylesheet
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://fonts.googleapis.com/css?family=Raleway",
-    "//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
+    #"https://codepen.io/chriddyp/pen/bWLwgP.css",
+    "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
+    "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css",
 ]
 
 theme = {"font-family": "Raleway", "background-color": "#e0e0e0"}
 
 def create_header():
     header_style = {"background-color": theme["background-color"], "padding": "1.5rem"}
-    header = html.Header(html.H1(children=app_name, style=header_style))
+    header = html.Header(html.H3(children=app_name + " - Analyze your Warcraft 3 Replays", style=header_style))
     return header
 
 def create_content():
@@ -64,14 +74,21 @@ def create_content():
             html.Div(
                 id="input-container",
                 children=[
-                    dcc.Input(id='aliases', value='h3n', type='text', placeholder='Playername'),
+                    html.Div(
+                        children=[
+                            #html.Label("Player Name", htmlFor="aliases"),
+                            html.Small("Please enter name of the main player in the replays", className="form-text, text-muted"),
+                            dcc.Input(id='aliases', value='h3n', type='text', placeholder='',className="form-control"),
+                        ],
+                        className="form-group",
+                    ),
                     dcc.Upload(
                         id='replayUpload',
                         children=html.Div([
                             'Drag and Drop or ', html.A('Select Replays')
                         ]),
+                        accept='.w3g',
                         style={
-                            'width': '100%',
                             'height': '60px',
                             'lineHeight': '60px',
                             'borderWidth': '1px',
@@ -82,17 +99,17 @@ def create_content():
                         },
                         # Allow multiple files to be uploaded
                         multiple=True,
-                        disabled=True
-                    )
+                        disabled=True,
+                    ),
+                    # html.Div(
+                    #     id="confirm-content",
+                    #     children=[
+                    #         dcc.Markdown(id="upload-confirm-markdown"),
+                    #         html.Button('Submit', id="upload-confirm-button"),
+                    #     ],
+                    # ),
                 ],
                 style={"margin-bottom": 20},
-            ),
-            html.Div(
-                id='reset-container',
-                children=[
-                    html.Button('Reset', id='reset-button'),
-                ],
-                style={'display': 'none'}
             ),
             html.Div(id='stats-container')
         ],
@@ -108,7 +125,6 @@ def serve_layout():
             create_content()
         ],
         className="container",
-        style={"font-family": theme["font-family"]},
     )
     return layout
 
@@ -130,13 +146,28 @@ def update_upload(aliases):
     else:
         return True
 
-@app.callback(Output('stats-container', 'children'),
-              [Input('aliases', 'value'),
-               Input('replayUpload', 'contents'),
-               Input('replayUpload', 'filename'),
-               Input('replayUpload', 'last_modified')])
 
-def update_output_div(aliases, list_of_contents, list_of_names, list_of_dates):
+# @app.callback(Output('upload-confirm-markdown', 'children'),
+#               [Input('replayUpload', 'filename')])
+# def update_confirm_markdown(list_of_names):
+#     if(list_of_names):
+#         return [f' You are about to upload and analyse {len(list_of_names)} replays. This may take a while.']        
+
+# @app.callback(Output('stats-container', 'children'),
+#               [Input('upload-confirm-button', 'n_clicks')],
+#               [State('aliases', 'value'),
+#                State('replayUpload', 'contents'),
+#                State('replayUpload', 'filename'),
+#                State('replayUpload', 'last_modified')])
+
+@app.callback(Output('stats-container', 'children'),
+               [Input('replayUpload', 'contents'),
+                Input('replayUpload', 'filename'),
+                Input('replayUpload', 'last_modified')],
+               [State('aliases', 'value')])
+
+def update_output_div(list_of_contents, list_of_names, list_of_dates, aliases):
+    # if(n_clicks > 0):
     if(list_of_names):
         replays = [load_replay(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)]
         stats = get_statistics(replays, [aliases])
@@ -155,6 +186,15 @@ for race in list(ALL_RACES.keys()):
     app.callback(Output(f'{race}-content-map', 'style'),
               [Input(f'{race}-tabs', 'value')])(
     create_map_tab_callback(race))
+    for enemy_race in list(ALL_RACES.keys()):
+        app.callback(Output(f'{race}-content-{enemy_race}', 'style'),
+              [Input(f'{race}-race-dropdown', 'value')])(
+        create_race_tab_dropdown_callback(enemy_race))
+
+    for mapname in list(ALL_MAPS.keys()):
+        app.callback(Output(f'{race}-content-{mapname}', 'style'),
+              [Input(f'{race}-map-dropdown', 'value')])(
+        create_map_tab_dropdown_callback(mapname))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

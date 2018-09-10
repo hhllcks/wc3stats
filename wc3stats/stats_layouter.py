@@ -8,31 +8,55 @@ from io import StringIO
 
 ALL_RACES = {
     'random': {
-        'color': '#D6D6D6',
-        'color_dark': '#C2C2C2',
-        'color_light': '#EBEBEB',
+        'color': '#EBEBEB',
+        'color_dark': '#E1E1E1',
+        'color_light': '#F5F5F5',
     },
     'human': {
-        'color': '#2727FF',
+        'color': '#BCBCFF',
         'color_dark': '#0000F3',
-        'color_light': '#5A5AFF',
+        'color_light': '#E3E3FF',
     },
     'orc': {
-        'color': '#228B22',
-        'color_dark': '#186218',
-        'color_light': '#2CB42C',
+        'color': '#E6F9E6',
+        'color_dark': '#D6F5D6',
+        'color_light': '#F6FDF6',
     },
     'undead': {
-        'color': '#646464',
-        'color_dark': '#515151',
-        'color_light': '#787878',
+        'color': '#D0D0D0',
+        'color_dark': '#C6C6C6',
+        'color_light': '#DADADA',
     },
     'nightelf': {
-        'color': '#800080',
-        'color_dark': '#4D004D',
-        'color_light': '#B300B3',
+        'color': '#FFDAFF',
+        'color_dark': '#FFC7FF',
+        'color_light': '#FFEEFF',
     },
 }
+
+ALL_MAPS = {
+    "EchoIsles": "Echo Isles",
+    "TwistedMeadows": "Twisted Meadows",
+    "PlunderIsle": "Plunder Isle",
+    "TurtleRock": "Turtle Rock",
+    "NorthernIsles": "Northern Isles",
+    "ConcealedHill": "Concealed Hill",
+    "GnollWood": "Gnoll Wood",
+    "Amazonia": "Amazonia",
+    "LostTemple": "Lost Temple",
+    "GlacialThaw": "Glacial Thaw",
+    "MeltingValley": "Melting Valley",
+    "SecretValley": "Secret Valley",
+    "TheTwoRivers": "The Two Rivers",
+    "TirisfalGlades": "Tirisfal Glades",
+    "Adrenaline": "Adrenaline",
+    "Avalanche": "Avalanche",
+    "PhantomGrove": "Phantom Grove",
+    "TerenasStand": "Terenas Stand",
+    "LastRefuge": "Last Refuge",
+    "SwampedTemple": "Swamped Temple",
+}
+
 WEEKDAYS = {
     '0': 'Monday',
     '1': 'Tuesday',
@@ -67,38 +91,76 @@ def get_stats_layout(stats):
 
 def get_race_content(stats, mainrace):
     content = [
-        dcc.Tabs(id=mainrace + "-tabs", value=mainrace + "-tab-total", children=[
-            dcc.Tab(label="Total", value=mainrace + "-tab-total"),
-            dcc.Tab(label="By Enemy Race", value=mainrace + "-tab-race"),
-            dcc.Tab(label="By Map", value=mainrace + "-tab-map"),
-        ])
+        dcc.Tabs(
+            id=mainrace + "-tabs", 
+            value=mainrace + "-tab-total", 
+            children=[
+                dcc.Tab(label="Total", value=mainrace + "-tab-total"),
+                dcc.Tab(label="By Enemy Race", value=mainrace + "-tab-race"),
+                dcc.Tab(label="By Map", value=mainrace + "-tab-map"),
+            ],
+        )
     ]
     content.append(html.Div(id=mainrace + "-content-total", children=[
         generate_table_by_race(stats, "race"),
+        html.Div(children=generate_graphs_by_race(stats, "race", mainrace + "-content-total-graph")),
         generate_table_by_map(stats, "map"),
-        generate_hours(stats, 'graph-hours-total'),
-        generate_days(stats, 'graph-days-total')
+        html.Div(children=[
+                generate_hours(stats, 'graph-hours-total'),
+                generate_days(stats, 'graph-days-total')
+            ]
+        )
     ]))
     content_race = []
+    dropdownValues = []
     for race in list(ALL_RACES.keys()):
         if(race in stats['race']):
+            dropdownValues.append({'label': race.title(), 'value': race})
             content_race.append(html.Div(id=mainrace + "-content-" + race, children=[
-                html.Header(html.H1(children=race.title())),
                 generate_table_by_map(stats['race'][race], "maps"),
-                generate_hours(stats['race'][race], 'graph-hours-' + race),
-                generate_days(stats['race'][race], 'graph-days-' + race)
+                html.Div(children=[
+                    generate_hours(stats['race'][race], 'graph-hours-' + race),
+                    generate_days(stats['race'][race], 'graph-days-' + race),
+                ])
             ]))
+
+    if(len(dropdownValues)>0):
+        race_dropdown = dcc.Dropdown(
+                id=mainrace + '-race-dropdown',
+                options=dropdownValues,
+                value=dropdownValues[0]['value'],
+                clearable=False,
+                searchable=False,
+                style={"margin":2},
+        )
+        content_race = [race_dropdown] + content_race
 
     content.append(html.Div(id=mainrace+"-content-race", children=content_race))
 
     content_map = []
+    dropdownValues = []
     for mapname in stats['map']:
+        dropdownValues.append({'label': ALL_MAPS[mapname], 'value': mapname})
         content_map.append(html.Div(id=mainrace + "-content-" + mapname, children=[
-            html.Header(html.H1(children=mapname)),
             generate_table_by_race(stats['map'][mapname], "enemy_races"),
-            generate_hours(stats['map'][mapname], 'graph-hours-' + mapname),
-            generate_days(stats['map'][mapname], 'graph-days-' + mapname)
+            html.Div(children=generate_graphs_by_race(stats['map'][mapname], "enemy_races", mainrace + "-content-" + mapname + "-graph")),
+            html.Div(children=[
+                    generate_hours(stats['map'][mapname], 'graph-hours-' + mapname),
+                    generate_days(stats['map'][mapname], 'graph-days-' + mapname)
+                ]
+            )
         ]))
+
+    if(len(dropdownValues)>0):
+        map_dropdown = dcc.Dropdown(
+                id=mainrace + '-map-dropdown',
+                options=dropdownValues,
+                value=dropdownValues[0]['value'],
+                clearable=False,
+                searchable=False,
+                style={"margin":2},
+        )
+        content_map = [map_dropdown] + content_map
 
     content.append(html.Div(id=mainrace+"-content-map", children=content_map))
 
@@ -145,8 +207,118 @@ def generate_table_by_race(stats, racekey):
     return html.Table(header+body,
         style={
             "margin-bottom": 20,
-            "padding": 2},
+            "padding": 2
+        },
+        className="table",
     )
+
+def generate_graphs_by_race(stats, racekey, id):
+    x = []
+    p = []
+    l = []
+    a = []
+    for race in list(ALL_RACES.keys()):
+        if race in stats[racekey]:
+            x.append(race.title())
+            p.append(stats[racekey][race]['p'])
+            l.append(stats[racekey][race]['avg_len'] / 1000 / 60)
+            a.append(stats[racekey][race]['apm'])
+
+    if not x:
+        return []
+
+    return [
+        # graph win%
+        dcc.Graph(
+            figure=go.Figure(
+                data=[
+                    go.Bar(
+                        x=x,
+                        y=p,
+                        name='Win %',
+                    ),
+                ],
+                layout=go.Layout(
+                    title='Win % by race',
+                    yaxis=dict(
+                        rangemode='tozero',
+                        showgrid=False,
+                    ),
+                    legend=go.layout.Legend(
+                        x=0,
+                        y=1.0
+                    ),
+                    margin=go.layout.Margin(l=40, r=0, t=40, b=30),
+                    autosize=True,
+                )
+            ),
+            # style={
+            #     "height": 200,
+            # },
+            # className="col",
+            id=id + "_p",
+        ),
+        # graph length
+        dcc.Graph(
+            figure=go.Figure(
+                data=[
+                    go.Bar(
+                        x=x,
+                        y=l,
+                        name='Length',
+                    ),
+                ],
+                layout=go.Layout(
+                    title='Length by race',
+                    yaxis=dict(
+                        rangemode='tozero',
+                        showgrid=False,
+                    ),
+                    legend=go.layout.Legend(
+                        x=0,
+                        y=1.0
+                    ),
+                    margin=go.layout.Margin(l=40, r=0, t=40, b=30),
+                    autosize=True,
+                )
+            ),
+            # style={
+            #     "height": 200,
+            # },
+            # className="col",
+            id=id + "_l",
+        ),
+        # graph apm
+        dcc.Graph(
+            figure=go.Figure(
+                data=[
+                    go.Bar(
+                        x=x,
+                        y=a,
+                        name='APM',
+                    ),
+                ],
+                layout=go.Layout(
+                    title='APM by race',
+                    yaxis=dict(
+                        rangemode='tozero',
+                        showgrid=False,
+                    ),
+                    legend=go.layout.Legend(
+                        x=0,
+                        y=1.0
+                    ),
+                    margin=go.layout.Margin(l=40, r=0, t=40, b=30),
+                    autosize=True,
+                )
+            ),
+            # style={
+            #     "height": 200,
+            # },
+            # className="col",
+            id=id + "_a",
+        ),
+    ]
 
 def generate_table_by_map(stats, mapkey):
     header = [html.Tr([
@@ -165,7 +337,7 @@ def generate_table_by_map(stats, mapkey):
 
     for mapname in list(stats[mapkey].keys()):
         body.append(html.Tr([
-            html.Td(mapname, style=style),
+            html.Td(ALL_MAPS[mapname], style=style),
             html.Td(stats[mapkey][mapname]['w'], style=style),
             html.Td(stats[mapkey][mapname]['l'], style=style),
             html.Td(f'{stats[mapkey][mapname]["p"]:.2%}', style=style),
@@ -187,6 +359,7 @@ def generate_table_by_map(stats, mapkey):
             "margin-bottom": 20,
             "padding": 2
         },
+        className="table",
     )
 
 def generate_hours(stats, id):
@@ -218,7 +391,7 @@ def generate_hours(stats, id):
                     y=empty_trace,
                     yaxis='y2', 
                     hoverinfo='none', 
-                    showlegend=False
+                    showlegend=False,
                 ),
                 go.Bar(
                     x=x,
@@ -230,23 +403,29 @@ def generate_hours(stats, id):
             layout=go.Layout(
                 title='Win % by hour',
                 yaxis=dict(
-                    title='Percent'
+                    title='Percent',
+                    rangemode='tozero',
+                    showgrid=False,
                 ),
                 yaxis2=dict(
                     title='# of Games',
                     side='right',
-                    overlaying='y'
+                    overlaying='y',
+                    rangemode='tozero',
+                    showgrid=False,
                 ),
                 showlegend=True,
-                legend=go.Legend(
+                legend=go.layout.Legend(
                     x=0,
                     y=1.0
                 ),
-                margin=go.layout.Margin(l=40, r=0, t=40, b=30)
+                margin=go.layout.Margin(l=40, r=0, t=40, b=30),
+                autosize=True,
             )
         ),
-        style={'height': 300}, 
-        id=id
+        # style={'height': 300, 'width': "50%"}, 
+        # className="col",
+        id=id,
     )
 
 def generate_days(stats, id):
@@ -291,21 +470,27 @@ def generate_days(stats, id):
             layout=go.Layout(
                 title='Win % by weekday',
                 yaxis=dict(
-                    title='Percent'
+                    title='Percent',
+                    rangemode='tozero',
+                    showgrid=False,
                 ),
                 yaxis2=dict(
                     title='# of Games',
                     side='right',
-                    overlaying='y'
+                    overlaying='y',
+                    rangemode='tozero',
+                    showgrid=False,
                 ),
                 showlegend=True,
-                legend=go.Legend(
+                legend=go.layout.Legend(
                     x=0,
                     y=1.0
                 ),
-                margin=go.layout.Margin(l=40, r=0, t=40, b=30)
+                margin=go.layout.Margin(l=40, r=0, t=40, b=30),
+                autosize=True,
             )
         ),
-        style={'height': 300}, 
-        id=id
+        # style={'height': 300, 'width': "50%"}, 
+        # className="col",
+        id=id,
     )
