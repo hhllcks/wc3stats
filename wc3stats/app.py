@@ -1,7 +1,7 @@
 import os
-import replay_handler
-import stats_layouter
-import callbacks
+from .replay_handler import load_replay, get_statistics
+from .stats_layouter import get_stats_layout, ALL_RACES
+from .callbacks import create_mainrace_tab_callback, create_total_tab_callback, create_race_tab_callback, create_map_tab_callback
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.plotly as py
@@ -10,7 +10,7 @@ from flask import Flask
 from dash import Dash
 from dash.dependencies import Input, Output, State
 from dotenv import load_dotenv
-from exceptions import ImproperlyConfigured
+from .exceptions import ImproperlyConfigured
 
 DOTENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(DOTENV_PATH)
@@ -136,21 +136,21 @@ def update_output_div(aliases, list_of_contents, list_of_names, list_of_dates):
     if(list_of_names):
         replays = [replay_handler.load_replay(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)]
         stats = replay_handler.get_statistics(replays, [aliases])
-        return stats_layouter.get_stats_layout(stats)
+        return get_stats_layout(stats)
 
-for race in list(stats_layouter.ALL_RACES.keys()):
+for race in list(ALL_RACES.keys()):
     app.callback(Output(f'{race}-content', 'style'),
               [Input('tabs', 'value')])(
-    callbacks.create_mainrace_tab_callback(race))
+    create_mainrace_tab_callback(race))
     app.callback(Output(f'{race}-content-total', 'style'),
               [Input(f'{race}-tabs', 'value')])(
-    callbacks.create_total_tab_callback(race))
+    create_total_tab_callback(race))
     app.callback(Output(f'{race}-content-race', 'style'),
               [Input(f'{race}-tabs', 'value')])(
-    callbacks.create_race_tab_callback(race))
+    create_race_tab_callback(race))
     app.callback(Output(f'{race}-content-map', 'style'),
               [Input(f'{race}-tabs', 'value')])(
-    callbacks.create_map_tab_callback(race))
+    create_map_tab_callback(race))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
