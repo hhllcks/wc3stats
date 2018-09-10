@@ -6,7 +6,33 @@ import plotly.graph_objs as go
 import sys
 from io import StringIO 
 
-ALL_RACES = ['random', 'human', 'orc', 'undead', 'nightelf']
+ALL_RACES = {
+    'random': {
+        'color': '#D6D6D6',
+        'color_dark': '#C2C2C2',
+        'color_light': '#EBEBEB',
+    },
+    'human': {
+        'color': '#2727FF',
+        'color_dark': '#0000F3',
+        'color_light': '#5A5AFF',
+    },
+    'orc': {
+        'color': '#228B22',
+        'color_dark': '#186218',
+        'color_light': '#2CB42C',
+    },
+    'undead': {
+        'color': '#646464',
+        'color_dark': '#515151',
+        'color_light': '#787878',
+    },
+    'nightelf': {
+        'color': '#800080',
+        'color_dark': '#4D004D',
+        'color_light': '#B300B3',
+    },
+}
 WEEKDAYS = {
     '0': 'Monday',
     '1': 'Tuesday',
@@ -54,7 +80,7 @@ def get_race_content(stats, mainrace):
         generate_days(stats, 'graph-days-total')
     ]))
     content_race = []
-    for race in ALL_RACES:
+    for race in list(ALL_RACES.keys()):
         if(race in stats['race']):
             content_race.append(html.Div(id=mainrace + "-content-" + race, children=[
                 html.Header(html.H1(children=race.title())),
@@ -89,27 +115,38 @@ def generate_table_by_race(stats, racekey):
     ])]
     body = []
 
-    for race in ALL_RACES:
+    for race in list(ALL_RACES.keys()):
         if(race in stats[racekey]):
+            style = {
+                'background-color':ALL_RACES[race]['color_light'],
+                'padding': 1,
+            }
             body.append(html.Tr([
-                html.Td(race.title()),
-                html.Td(stats[racekey][race]['w']),
-                html.Td(stats[racekey][race]['l']),
-                html.Td(f"{stats[racekey][race]['p']:.2%}"),
-                html.Td(stats[racekey][race]['avg_length']),
-                html.Td(stats[racekey][race]['apm']),
+                html.Td(race.title(),style=style),
+                html.Td(stats[racekey][race]['w'],style=style),
+                html.Td(stats[racekey][race]['l'],style=style),
+                html.Td(f"{stats[racekey][race]['p']:.2%}",style=style),
+                html.Td(stats[racekey][race]['avg_length'],style=style),
+                html.Td(stats[racekey][race]['apm'],style=style),
             ]))
 
+    style = {
+        'padding': 1,
+    }
     body.append(html.Tr([
-        html.Td('Total'),
-        html.Td(stats['w']),
-        html.Td(stats['l']),
-        html.Td(f"{stats['p']:.2%}"),
-        html.Td(stats['avg_length']),
-        html.Td(stats['apm']),
+        html.Td('Total',style=style),
+        html.Td(stats['w'],style=style),
+        html.Td(stats['l'],style=style),
+        html.Td(f"{stats['p']:.2%}",style=style),
+        html.Td(stats['avg_length'],style=style),
+        html.Td(stats['apm'],style=style),
     ]))
 
-    return html.Table(header+body)
+    return html.Table(header+body,
+        style={
+            "margin-bottom": 20,
+            "padding": 2},
+    )
 
 def generate_table_by_map(stats, mapkey):
     header = [html.Tr([
@@ -122,27 +159,35 @@ def generate_table_by_map(stats, mapkey):
 
     ])]
     body = []
+    style = {
+        'padding': 1,
+    }
 
     for mapname in list(stats[mapkey].keys()):
         body.append(html.Tr([
-            html.Td(mapname),
-            html.Td(stats[mapkey][mapname]['w']),
-            html.Td(stats[mapkey][mapname]['l']),
-            html.Td(f"{stats[mapkey][mapname]['p']:.2%}"),
-            html.Td(stats[mapkey][mapname]['avg_length']),
-            html.Td(stats[mapkey][mapname]['apm']),
+            html.Td(mapname, style=style),
+            html.Td(stats[mapkey][mapname]['w'], style=style),
+            html.Td(stats[mapkey][mapname]['l'], style=style),
+            html.Td(f'{stats[mapkey][mapname]["p"]:.2%}', style=style),
+            html.Td(stats[mapkey][mapname]['avg_length'], style=style),
+            html.Td(stats[mapkey][mapname]['apm'], style=style),
         ]))
 
     body.append(html.Tr([
-        html.Td('Total'),
-        html.Td(stats['w']),
-        html.Td(stats['l']),
-        html.Td(f"{stats['p']:.2%}"),
-        html.Td(stats['avg_length']),
-        html.Td(stats['apm']),
+        html.Td('Total', style=style),
+        html.Td(stats['w'], style=style),
+        html.Td(stats['l'], style=style),
+        html.Td(f'{stats["p"]:.2%}', style=style),
+        html.Td(stats['avg_length'], style=style),
+        html.Td(stats['apm'], style=style),
     ]))
 
-    return html.Table(header+body)
+    return html.Table(header+body,
+        style={
+            "margin-bottom": 20,
+            "padding": 2
+        },
+    )
 
 def generate_hours(stats, id):
     x = list(stats['hours'].keys())
