@@ -134,8 +134,8 @@ def update_upload(aliases):
 
 def update_output_div(aliases, list_of_contents, list_of_names, list_of_dates):
     if(list_of_names):
-        replays = [replay_handler.load_replay(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)]
-        stats = replay_handler.get_statistics(replays, [aliases])
+        replays = [load_replay(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)]
+        stats = get_statistics(replays, [aliases])
         return get_stats_layout(stats)
 
 for race in list(ALL_RACES.keys()):
