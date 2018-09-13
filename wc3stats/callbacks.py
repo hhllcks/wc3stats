@@ -1,3 +1,11 @@
+def create_full_game_list_tab_callback():
+    def render_content(tab):
+        if tab == 'list':
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
+    return render_content
+
 def create_mainrace_tab_callback(race):
     def render_content(tab):
         if tab == f'{race}':
@@ -54,4 +62,3 @@ def create_map_tab_dropdown_callback(mapname):
         else:
             return {'display': 'none'}
     return render_content_map
-

@@ -75,7 +75,7 @@ def format_length(ms):
 def load_single_replay(file, filename, date):
     try:
         rep = File(file)
-        if rep.game_type == modes['1on1']:
+        if rep.game_type == modes['1on1'] and rep.game_name == 'BNet':
             slots = parse_slot_records(rep.slot_records)
             return {
                 'game_name': rep.game_name,
@@ -95,32 +95,32 @@ def load_single_replay(file, filename, date):
     except (IndexError, KeyError, ValueError):
         print(filename)
 
-def load_replays(p):
-    replays = []
+# def load_replays(p):
+#     replays = []
 
-    for f in yieldFiles(p):
-        try:
-            rep = File(f)
-            if rep.game_type == modes['1on1']:
-                slots = parse_slot_records(rep.slot_records)
-                replays.append({
-                    'game_name': rep.game_name,
-                    'players': parse_players(rep.players, slots),
-                    'player_count': rep.player_count,
-                    'length_formatted': format_length(rep.replay_length),
-                    'length': rep.replay_length,
-                    'game_type': rep.game_type,
-                    'map_file_name': rep.map_name,
-                    'map': format_map(rep.map_name),
-                    'winner': rep.winner(),
-                    'winning_team': slots[rep.winner()].team,
-                    'filename': f,
-                    'datetime': datetime.datetime.fromtimestamp(os.path.getmtime(f))
-                })
-        except (IndexError, KeyError, ValueError):
-            print(f)
+#     for f in yieldFiles(p):
+#         try:
+#             rep = File(f)
+#             if rep.game_type == modes['1on1']:
+#                 slots = parse_slot_records(rep.slot_records)
+#                 replays.append({
+#                     'game_name': rep.game_name,
+#                     'players': parse_players(rep.players, slots),
+#                     'player_count': rep.player_count,
+#                     'length_formatted': format_length(rep.replay_length),
+#                     'length': rep.replay_length,
+#                     'game_type': rep.game_type,
+#                     'map_file_name': rep.map_name,
+#                     'map': format_map(rep.map_name),
+#                     'winner': rep.winner(),
+#                     'winning_team': slots[rep.winner()].team,
+#                     'filename': f,
+#                     'datetime': datetime.datetime.fromtimestamp(os.path.getmtime(f))
+#                 })
+#         except (IndexError, KeyError, ValueError):
+#             print(f)
 
-    return replays
+#     return replays
 
 def get_player(replay, player_aliases):
     for main_player_name in player_aliases:
@@ -128,6 +128,13 @@ def get_player(replay, player_aliases):
             if main_player_name == p['name']:
                 return p
     return None
+
+def get_enemy_players(replay, main_team):
+    enemy_players = {}
+    for p in replay['players']:
+        if main_team != p['team']:
+            enemy_players[p['id']] = p
+    return enemy_players
 
 def get_other_race(replay, player, bAlliedRace=None):
     players = replay['players']
@@ -175,6 +182,12 @@ def enrich_replay_data(replays, player_aliases):
                 new_rep['race'] = player['race']
                 new_rep['ally_race'] = get_other_race(rep, player, True)
                 new_rep['enemy_race'] = get_other_race(rep, player, False)
+                new_rep['enemy_players'] = get_enemy_players(rep, player['team'])
+                for p in list(new_rep['enemy_players'].values()):
+                    if p['id'] in rep['apm_all']:
+                        new_rep['enemy_players'][p['id']]['apm'] = rep['apm_all'][p['id']]
+                    else:
+                        new_rep['enemy_players'][p['id']]['apm'] = 0
                 
                 enriched_replays.append(new_rep)
                 
@@ -205,6 +218,26 @@ def get_empty_stats_dict(dont_add_dicts=False):
         'p': 0.0,
         'avg_len': 0,
         'avg_length': "",
+        '0to10': {
+            'w': 0,
+            'l': 0,
+            'p': 0.0,
+        },
+        '10to20': {
+            'w': 0,
+            'l': 0,
+            'p': 0.0,
+        },
+        '20to30': {
+            'w': 0,
+            'l': 0,
+            'p': 0.0,
+        },
+        '30up': {
+            'w': 0,
+            'l': 0,
+            'p': 0.0,
+        },
         'apm': 0,
         'hours': {
             '0': {
@@ -416,18 +449,29 @@ def compute_stats_single_replay(rep, stats):
     
     # update wins/losses
     if rep['won']:
-        stats['w'] += 1
-        stats['hours'][str(rep['hour'])]['w'] +=1
-        stats['days'][str(rep['weekday'])]['w'] +=1
+        wl_string = 'w'
     else:
-        stats['l'] += 1
-        stats['hours'][str(rep['hour'])]['l'] +=1
-        stats['days'][str(rep['weekday'])]['l'] +=1
+        wl_string = 'l'
+
+    stats[wl_string] += 1
+    stats['hours'][str(rep['hour'])][wl_string] +=1
+    stats['days'][str(rep['weekday'])][wl_string] +=1
+    if rep['length']<600000:
+        stats['0to10'][wl_string] +=1
+        stats['0to10']['p'] = round(stats['0to10']['w'] / (stats['0to10']['w']+stats['0to10']['l']), 2)
+    elif rep['length']<1200000:
+        stats['10to20'][wl_string] +=1
+        stats['10to20']['p'] = round(stats['10to20']['w'] / (stats['10to20']['w']+stats['10to20']['l']), 2)
+    elif rep['length']<1800000:
+        stats['20to30'][wl_string] +=1
+        stats['20to30']['p'] = round(stats['20to30']['w'] / (stats['20to30']['w']+stats['20to30']['l']), 2)
+    else:
+        stats['30up'][wl_string] +=1
+        stats['30up']['p'] = round(stats['30up']['w'] / (stats['30up']['w']+stats['30up']['l']), 2)
         
     # replay length
     stats['avg_len'] = temp_length // (stats['w']+stats['l'])
     stats['avg_length'] = format_length(stats['avg_len'])
-    
     
     # win %
     stats['p'] = round(stats['w'] / (stats['w']+stats['l']), 2)
@@ -469,6 +513,9 @@ def compute_stats(replays, race=None, maps=None, ally_race=None, enemy_race=None
             compute_stats_single_replay(rep, stats[rep['race']])
     return stats
 
+def get_replay_list(replays):
+    return sorted(replays, key=lambda k: k['datetime'], reverse=True) 
+
 def list_replay_names(replays, race=None, maps=None, ally_race=None, enemy_race=None, won=None):
     filenames = []
     for rep in replays:
@@ -494,4 +541,3 @@ def stats_post_processing(stats):
             del race_on_map['map'] 
             del race_on_map['enemy_race']
         del stats[race]['race_on_map']
-

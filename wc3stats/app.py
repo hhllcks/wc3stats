@@ -1,7 +1,8 @@
 import os
+import random, threading, webbrowser
 from .replay_handler import load_replay, get_statistics
 from .stats_layouter import get_stats_layout, ALL_RACES, ALL_MAPS
-from .callbacks import create_mainrace_tab_callback, create_total_tab_callback, create_race_tab_callback, create_map_tab_callback, create_race_tab_dropdown_callback, create_map_tab_dropdown_callback
+from .callbacks import create_full_game_list_tab_callback, create_mainrace_tab_callback, create_total_tab_callback, create_race_tab_callback, create_map_tab_callback, create_race_tab_dropdown_callback, create_map_tab_dropdown_callback
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.plotly as py
@@ -17,16 +18,16 @@ load_dotenv(DOTENV_PATH)
 
 if "DYNO" in os.environ:
     # the app is on Heroku
-    debug = False
+    on_heroku = True
 else:
-    debug = True
+    on_heroku = False
     dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
     load_dotenv(dotenv_path)
 
 try:
-    py.sign_in(os.environ["PLOTLY_USERNAME"], os.environ["PLOTLY_API_KEY"])
+   py.sign_in(os.environ["PLOTLY_USERNAME"], os.environ["PLOTLY_API_KEY"])
 except KeyError:
-    raise ImproperlyConfigured("Plotly credentials not set in .env")
+   raise ImproperlyConfigured("Plotly credentials not set in .env")
 
 app_name = "WC3 Stats"
 server = Flask(app_name)
@@ -37,7 +38,7 @@ except KeyError:
     raise ImproperlyConfigured("SECRET KEY not set in .env:")
 
 metas = [
-    {'name': 'viewport', 'content': 'width=device-width, initial-scale=1, shrink-to-fit=no'},
+   {'name': 'viewport', 'content': 'width=device-width, initial-scale=1, shrink-to-fit=no'},
 ]
 app = Dash(
     name=app_name, 
@@ -45,20 +46,22 @@ app = Dash(
     csrf_protect=False,
     meta_tags=metas,
 )
+# app.css.config.serve_locally = True
+# app.scripts.config.serve_locally = True
 app.config['suppress_callback_exceptions']=True
 app.config['include_asset_files']=True
 app.title = "WC3 Stats"
 
 external_js = [
-    #"https://code.jquery.com/jquery-3.2.1.slim.min.js",
-    #"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js",
-    #"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+#     #"https://code.jquery.com/jquery-3.2.1.slim.min.js",
+#     #"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js",
+#     #"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
 ]
 external_css = [
-    # dash stylesheet
-    #"https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
-    "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css",
+#     # dash stylesheet
+#     #"https://codepen.io/chriddyp/pen/bWLwgP.css",
+#     "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
+#     "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css",
 ]
 
 theme = {"font-family": "Raleway", "background-color": "#e0e0e0"}
@@ -124,7 +127,7 @@ def serve_layout():
             create_header(), 
             create_content()
         ],
-        className="container",
+        className="container-fluid",
     )
     return layout
 
@@ -170,9 +173,12 @@ def update_output_div(list_of_contents, list_of_names, list_of_dates, aliases):
     # if(n_clicks > 0):
     if(list_of_names):
         replays = [load_replay(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)]
-        stats = get_statistics(replays, [aliases])
-        return get_stats_layout(stats)
+        (stats, rep_list) = get_statistics(replays, [aliases])
+        return get_stats_layout(stats, rep_list)
 
+app.callback(Output('full-game-list-content', 'style'),
+            [Input('tabs', 'value')])(
+create_full_game_list_tab_callback())
 for race in list(ALL_RACES.keys()):
     app.callback(Output(f'{race}-content', 'style'),
               [Input('tabs', 'value')])(
@@ -196,6 +202,15 @@ for race in list(ALL_RACES.keys()):
               [Input(f'{race}-map-dropdown', 'value')])(
         create_map_tab_dropdown_callback(mapname))
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+def run():
+    debug = False
+
+    if debug == False and on_heroku == False:
+        port = 5000 + random.randint(0, 999)
+        url = f"http://127.0.0.1:{port}"
+        threading.Timer(1.25, lambda: webbrowser.open(url) ).start()
+    else:
+        port = int(os.environ.get("PORT", 5000))
+        url = f"http://127.0.0.1:{port}"
+
     app.run_server(debug=debug, port=port, threaded=True)

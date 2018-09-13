@@ -2,10 +2,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 
-# TODO remove hacky hack
-import sys
-from io import StringIO 
-
 ALL_RACES = {
     'random': {
         'color': '#EBEBEB',
@@ -58,16 +54,16 @@ ALL_MAPS = {
 }
 
 WEEKDAYS = {
-    '0': 'Monday',
-    '1': 'Tuesday',
-    '2': 'Wednesday',
-    '3': 'Thursday',
-    '4': 'Friday',
-    '5': 'Saturday',
-    '6': 'Sunday'
+    '0': 'Mon',
+    '1': 'Tue',
+    '2': 'Wed',
+    '3': 'Thu',
+    '4': 'Fri',
+    '5': 'Sat',
+    '6': 'Sun'
 }
 
-def get_stats_layout(stats):
+def get_stats_layout(stats, rep_list):
     tabs = []
     content = [] 
     races = sorted(list(stats.keys()))
@@ -77,10 +73,19 @@ def get_stats_layout(stats):
                 dcc.Tab(label=race.title(), value=race)
             )
             content.append(
-                html.Div(id=race + '-content', style={'display': 'none'},
+                html.Div(id=race + '-content',
                     children=get_race_content(stats[race], race)
                 )
             )
+
+        tabs.append(
+            dcc.Tab(label="Full Game List", value="list")
+        )
+        content.append(
+            html.Div(id='full-game-list-content',
+                children=get_full_game_list_content(rep_list)
+            )
+        )
 
         layout = html.Div([
             dcc.Tabs(id="tabs", value=races[0], children=tabs),
@@ -103,12 +108,12 @@ def get_race_content(stats, mainrace):
     ]
     content.append(html.Div(id=mainrace + "-content-total", children=[
         generate_table_by_race(stats, "race"),
-        html.Div(children=generate_graphs_by_race(stats, "race", mainrace + "-content-total-graph")),
         generate_table_by_map(stats, "map"),
         html.Div(children=[
-                generate_hours(stats, 'graph-hours-total'),
-                generate_days(stats, 'graph-days-total')
-            ]
+                html.Div(generate_hours(stats, 'graph-hours-total'),style={"display": "inline-block"}),
+                html.Div(generate_days(stats, 'graph-days-total'),style={"display": "inline-block"}),
+            ],
+            style={'width':"100%", "display": "inline-block"},
         )
     ]))
     content_race = []
@@ -119,9 +124,12 @@ def get_race_content(stats, mainrace):
             content_race.append(html.Div(id=mainrace + "-content-" + race, children=[
                 generate_table_by_map(stats['race'][race], "maps"),
                 html.Div(children=[
-                    generate_hours(stats['race'][race], 'graph-hours-' + race),
-                    generate_days(stats['race'][race], 'graph-days-' + race),
-                ])
+                        html.Div(generate_lengths(stats['race'][race], 'graph-lengths-' + race),style={"display": "inline-block"}),
+                        html.Div(generate_hours(stats['race'][race], 'graph-hours-' + race),style={"display": "inline-block"}),
+                        html.Div(generate_days(stats['race'][race], 'graph-days-' + race),style={"display": "inline-block"}),
+                    ],
+                    style={'width':"100%", "display": "inline-block"},
+                )
             ]))
 
     if(len(dropdownValues)>0):
@@ -143,11 +151,12 @@ def get_race_content(stats, mainrace):
         dropdownValues.append({'label': ALL_MAPS[mapname], 'value': mapname})
         content_map.append(html.Div(id=mainrace + "-content-" + mapname, children=[
             generate_table_by_race(stats['map'][mapname], "enemy_races"),
-            html.Div(children=generate_graphs_by_race(stats['map'][mapname], "enemy_races", mainrace + "-content-" + mapname + "-graph")),
             html.Div(children=[
-                    generate_hours(stats['map'][mapname], 'graph-hours-' + mapname),
-                    generate_days(stats['map'][mapname], 'graph-days-' + mapname)
-                ]
+                    html.Div(generate_lengths(stats['map'][mapname], 'graph-lengths-' + mapname),style={"display": "inline-block"}),
+                    html.Div(generate_hours(stats['map'][mapname], 'graph-hours-' + mapname),style={"display": "inline-block"}),
+                    html.Div(generate_days(stats['map'][mapname], 'graph-days-' + mapname),style={"display": "inline-block"}),
+                ],
+                style={'width':"100%", "display": "inline-block"},
             )
         ]))
 
@@ -212,114 +221,6 @@ def generate_table_by_race(stats, racekey):
         className="table",
     )
 
-def generate_graphs_by_race(stats, racekey, id):
-    x = []
-    p = []
-    l = []
-    a = []
-    for race in list(ALL_RACES.keys()):
-        if race in stats[racekey]:
-            x.append(race.title())
-            p.append(stats[racekey][race]['p'])
-            l.append(stats[racekey][race]['avg_len'] / 1000 / 60)
-            a.append(stats[racekey][race]['apm'])
-
-    if not x:
-        return []
-
-    return [
-        # graph win%
-        dcc.Graph(
-            figure=go.Figure(
-                data=[
-                    go.Bar(
-                        x=x,
-                        y=p,
-                        name='Win %',
-                    ),
-                ],
-                layout=go.Layout(
-                    title='Win % by race',
-                    yaxis=dict(
-                        rangemode='tozero',
-                        showgrid=False,
-                    ),
-                    legend=go.layout.Legend(
-                        x=0,
-                        y=1.0
-                    ),
-                    margin=go.layout.Margin(l=40, r=0, t=40, b=30),
-                    autosize=True,
-                )
-            ),
-            # style={
-            #     "height": 200,
-            # },
-            # className="col",
-            id=id + "_p",
-        ),
-        # graph length
-        dcc.Graph(
-            figure=go.Figure(
-                data=[
-                    go.Bar(
-                        x=x,
-                        y=l,
-                        name='Length',
-                    ),
-                ],
-                layout=go.Layout(
-                    title='Length by race',
-                    yaxis=dict(
-                        rangemode='tozero',
-                        showgrid=False,
-                    ),
-                    legend=go.layout.Legend(
-                        x=0,
-                        y=1.0
-                    ),
-                    margin=go.layout.Margin(l=40, r=0, t=40, b=30),
-                    autosize=True,
-                )
-            ),
-            # style={
-            #     "height": 200,
-            # },
-            # className="col",
-            id=id + "_l",
-        ),
-        # graph apm
-        dcc.Graph(
-            figure=go.Figure(
-                data=[
-                    go.Bar(
-                        x=x,
-                        y=a,
-                        name='APM',
-                    ),
-                ],
-                layout=go.Layout(
-                    title='APM by race',
-                    yaxis=dict(
-                        rangemode='tozero',
-                        showgrid=False,
-                    ),
-                    legend=go.layout.Legend(
-                        x=0,
-                        y=1.0
-                    ),
-                    margin=go.layout.Margin(l=40, r=0, t=40, b=30),
-                    autosize=True,
-                )
-            ),
-            # style={
-            #     "height": 200,
-            # },
-            # className="col",
-            id=id + "_a",
-        ),
-    ]
-
 def generate_table_by_map(stats, mapkey):
     header = [html.Tr([
         html.Th('Map'),
@@ -360,6 +261,45 @@ def generate_table_by_map(stats, mapkey):
             "padding": 2
         },
         className="table",
+    )
+
+def generate_lengths(stats, id):
+    x = ['0-10 min', '10-20 min', '20-30 min', '> 30 min']
+    p = []
+
+    p.append(stats['0to10']['p'] * 100)
+    p.append(stats['10to20']['p'] * 100)
+    p.append(stats['20to30']['p'] * 100)
+    p.append(stats['30up']['p'] * 100)
+
+    return dcc.Graph(
+        figure=go.Figure(
+            data=[
+                go.Bar(
+                    x=x,
+                    y=p,
+                    name='Win %',
+                ),
+            ],
+            layout=go.Layout(
+                title='Win % by length',
+                yaxis=dict(
+                    title='Percent',
+                    rangemode='tozero',
+                    showgrid=False,
+                ),
+                showlegend=True,
+                legend=go.layout.Legend(
+                    x=0,
+                    y=1.0
+                ),
+                margin=go.layout.Margin(l=40, r=40, t=30, b=40),
+                autosize=True,
+            )
+        ),
+        id=id,
+        # className="col",
+        style={'height':200, 'width': 500},
     )
 
 def generate_hours(stats, id):
@@ -419,13 +359,13 @@ def generate_hours(stats, id):
                     x=0,
                     y=1.0
                 ),
-                margin=go.layout.Margin(l=40, r=0, t=40, b=30),
+                margin=go.layout.Margin(l=40, r=40, t=30, b=40),
                 autosize=True,
             )
         ),
-        # style={'height': 300, 'width': "50%"}, 
-        # className="col",
         id=id,
+        # className="col",
+        style={'height':200, 'width': 500},
     )
 
 def generate_days(stats, id):
@@ -486,11 +426,66 @@ def generate_days(stats, id):
                     x=0,
                     y=1.0
                 ),
-                margin=go.layout.Margin(l=40, r=0, t=40, b=30),
+                margin=go.layout.Margin(l=40, r=40, t=30, b=40),
                 autosize=True,
             )
         ),
-        # style={'height': 300, 'width': "50%"}, 
-        # className="col",
         id=id,
+        # className="col",
+        style={'height':200, 'width': 500},
+    )
+
+def get_full_game_list_content(rep_list):
+    header = [html.Tr([
+        html.Th('Game Date'),
+        html.Th('Map'),
+        html.Th('Race'),
+        html.Th('Enemy Race'),
+        html.Th('Player'),
+        html.Th('Result'),
+        html.Th('Length'),
+        html.Th('APM'),
+        html.Th('Enemy APM')
+    ])]
+    body = []
+
+    for rep in rep_list:
+        if rep['won']:
+            result = 'Win'
+            style = {
+                'background-color': '#E5FBE5',
+                'padding': 1,
+            }
+        else:
+            result = 'Loss'
+            style = {
+                'background-color': '#FFF1D8',
+                'padding': 1,
+            }
+
+
+        enemy_player_names = []
+        enemy_player_apm = []
+        for p in list(rep['enemy_players'].values()):
+            enemy_player_names.append(p['name'])
+            enemy_player_apm.append(str(int(p['apm'])))
+
+        body.append(html.Tr([
+            html.Td(f'{rep["datetime"]:%m/%d/%Y %H:%M:%S}',style=style),
+            html.Td(ALL_MAPS[rep['map']],style=style),
+            html.Td(rep['race'].title(),style=style),
+            html.Td(", ".join([x.title() for x in list(rep['enemy_race'])]),style=style),
+            html.Td(", ".join(enemy_player_names),style=style),
+            html.Td(result,style=style),
+            html.Td(rep['length_formatted'],style=style),
+            html.Td(int(rep['apm']),style=style),
+            html.Td(", ".join(enemy_player_apm),style=style),
+        ]))
+
+    return html.Table(header+body,
+        style={
+            "margin-bottom": 20,
+            "padding": 2
+        },
+        className="table",
     )
