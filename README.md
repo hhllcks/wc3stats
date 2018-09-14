@@ -32,7 +32,7 @@ I am running it as a free app there. If there is demand to put it on a stronger 
 Follow these steps to run the app locally:
 - create a python 3 environment on your system
     - i recommend a miniconda installation from [here](https://conda.io/miniconda.html)
-    - after install create an environemnt with 
+    - after install create an environment with 
     ```shell
         conda create --name wc3 python pip
     ```
@@ -49,7 +49,7 @@ Follow these steps to run the app locally:
     ```shell
         pip install -r requirements.txt
     ```
-- create and maintain the file `.env` just as described in `.env.example`
+- create the file `.env` just as described in `.env.example`
     - you need to register on [plot.ly](https://plot.ly) to get a username and api key
 - run the app
     ```shell
