@@ -16,6 +16,11 @@ Since Blizzard does not update the battle.net statistics for Warcraft 3 anymore 
 # Issues and feature request
 Please use the issues of this github repo to send any feedback and suggestions my way. Also if you want to help improving the app please reach out. I am working full time and therefor I don't have much time to update the app.
 
+# Thanks
+Thanks to [scopatz](https://github.com/scopatz) for creating [a python module to read Warcraft 3 replays](https://github.com/scopatz/w3g).
+
+Thanks to Blizzard for creating the greatest game of all time.
+
 # How to use it
 At the moment there are three ways to use the app:
 - run it locally using an .exe that I compiled
