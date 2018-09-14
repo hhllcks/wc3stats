@@ -34,7 +34,7 @@ At the moment there are three ways to use the app:
 
 ## run it locally using an .exe that I compiled
 Download the .zip file containing the app and unzip it. Find the `run.exe` and start it. Your browser should open with the app.
-Windows: [Download](run-windows.zip)
+Windows: [Download](run-windows.zip?raw=true)
 
 ## Online version at [wc3stats.herokuapp.com](https://wc3stats.herokuapp.com/)
 I am running it as a free app there. If there is demand to put it on a stronger server please reach out to me. Maybe there are some dev ops guys who can help me. You can also donate to https://www.paypal.me/hendrikhilleckes. 
