@@ -1,1 +1,1 @@
-web: gunicorn wc3stats.app:server --bind 0.0.0.0:$PORT --timeout 300
+web: gunicorn run:server --bind 0.0.0.0:$PORT --timeout 300
