@@ -81,7 +81,7 @@ def create_content():
                         children=[
                             #html.Label("Player Name", htmlFor="aliases"),
                             html.Small("Please enter name of the main player in the replays", className="form-text, text-muted"),
-                            dcc.Input(id='aliases', value='h3n', type='text', placeholder='',className="form-control"),
+                            dcc.Input(id='aliases', value='', type='text', placeholder='',className="form-control"),
                         ],
                         className="form-group",
                     ),

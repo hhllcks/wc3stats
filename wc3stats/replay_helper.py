@@ -5,8 +5,6 @@ import json
 
 path_to_replays = '/Users/hen/Boxcryptor/Google Drive/W3'
 
-main_player_aliases = ['h3n']
-
 race = {
     'nightelf': 'Nightelf',
     'orc': 'Orc',
