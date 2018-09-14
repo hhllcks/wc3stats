@@ -76,7 +76,6 @@ def create_footer():
             html.A('@hhllcks', href='https://twitter.com/hhllcks', className='nav-link text-secondary'),
             html.A('Blog', href='https://www.hhllcks.de/', className='nav-link text-secondary'),
             html.A('Report a bug or send suggestions', href='https://github.com/hhllcks/wc3stats/issues', className='nav-link text-secondary'),
-            html.A('Donate', href='https://www.paypal.me/hendrikhilleckes', className='nav-link text-secondary')
         ],
         className='nav justify-content-center')
 
