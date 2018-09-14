@@ -6,3 +6,4 @@ gunicorn==19.9.0  # for the deployment on Heroku
 plotly==3.2.0
 pytest==3.8.0
 python-dotenv==0.9.1
+PyInstaller==3.4

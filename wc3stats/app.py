@@ -19,10 +19,8 @@ load_dotenv(DOTENV_PATH)
 if "DYNO" in os.environ:
     # the app is on Heroku
     on_heroku = True
-    multiple_files = False
 else:
     on_heroku = False
-    multiple_files = True
     dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
     load_dotenv(dotenv_path)
 
@@ -103,7 +101,7 @@ def create_content():
                             'margin': '10px'
                         },
                         # Allow multiple files to be uploaded
-                        multiple=multiple_files,
+                        multiple=True,
                         disabled=True,
                     ),
                     # html.Div(
