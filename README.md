@@ -16,6 +16,11 @@ Since Blizzard does not update the battle.net statistics for Warcraft 3 anymore 
 # Issues and feature request
 Please use the issues of this github repo to send any feedback and suggestions my way. Also if you want to help improving the app please reach out. I am working full time and therefor I don't have much time to update the app.
 
+## Known Issues
+- the loading indicator appears after the file upload. So for some time you will think that nothing is happening. That is due to the dash framework I am using. I am already thinking about using pure Flask
+- it takes a long time to compute the stats (for my ~250 replays it is usually around 2 minutes). Please have in mind that the app has to parse every single replay!
+- the size and position of the graphs is not ideal
+
 # Thanks
 Thanks to [scopatz](https://github.com/scopatz) for creating [a python module to read Warcraft 3 replays](https://github.com/scopatz/w3g).
 
