@@ -34,11 +34,11 @@ Thanks to Blizzard for creating the greatest game of all time.
 
 # How to use it
 At the moment there are three ways to use the app:
-- run it locally using an .exe that I compiled
+- run it locally using a compiled executable
 - open [wc3stats.herokuapp.com](https://wc3stats.herokuapp.com/) (this runs on a free server and I assume that it won't stay online long if too many people use it)
 - run it locally in a python environment (if you are experienced with Python, Flask & co.)
 
-## run it locally using an .exe that I compiled
+## Run it locally using a compiled executable
 Windows:
 Download the .zip file containing the app and unzip it. Find the `run.exe` and start it. Your browser should open with the app.
 [Download](run-windows.zip?raw=true) (Tested on Windows 7 64-bit)
