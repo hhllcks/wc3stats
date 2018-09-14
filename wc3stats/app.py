@@ -214,3 +214,6 @@ def run():
         url = f"http://127.0.0.1:{port}"
 
     app.run_server(debug=debug, port=port, threaded=True)
+
+if __name__ == "__main__":
+    run()
