@@ -71,6 +71,14 @@ def create_header():
     header = html.Header(html.H3(children=app_name + " - Analyze your Warcraft 3 Replays", style=header_style))
     return header
 
+def create_footer():
+    return html.Nav(children=[
+            html.A('@hhllcks', href='https://twitter.com/hhllcks', className='nav-link text-secondary'),
+            html.A('Blog', href='https://www.hhllcks.de/', className='nav-link text-secondary'),
+            html.A('Report a bug or send suggestions', href='https://github.com/hhllcks/wc3stats/issues', className='nav-link text-secondary')
+        ],
+        className='nav justify-content-center')
+
 def create_content():
     content = html.Div(
         children=[
@@ -125,7 +133,8 @@ def serve_layout():
     layout = html.Div(
         children=[
             create_header(), 
-            create_content()
+            create_content(),
+            create_footer(),
         ],
         className="container-fluid",
     )
