@@ -13,5 +13,8 @@ def get_statistics(replays, aliases):
     return (stats, rep_list)
 
 def load_replay(contents, filename, date):
-    f = io.BytesIO(base64.b64decode(re.sub("data:;base64", '', contents)))
-    return load_single_replay(f, filename, date)
+    try:
+        f = io.BytesIO(base64.b64decode(contents[contents.find(";base64")+7:]))
+        return load_single_replay(f, filename, date)
+    except:
+        print(contents)
