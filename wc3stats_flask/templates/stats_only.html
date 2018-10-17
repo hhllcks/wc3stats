@@ -1,0 +1,42 @@
+<div class="card mt-3">
+    <div class="card-header">
+        <div class="d-flex justify-content-between">
+            <a href="/"><i class="fa fa-home"></i></a>
+            <div>WC3 Stats - Analyze your Warcraft 3 Replays</div>
+            {% if session.stats_raw %}
+            <a href="/"><i class="fa fa-file-download"></i></a>
+            {% else %}
+            <i class="fa fa-redo invisible"></i>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if g.stats_content %}
+        {{ g.stats_content|safe }}
+        {% else %}
+
+        <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button">By Race</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" role="tab" data-toggle="tab" id="race-nightelf-item" href="#race-nightelf">Nightelf</a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#fgl" id="fgl-tab" role="tab">Full Game List</a>
+                </li>
+            </ul>
+
+        <div class="tab-content" id="tabContent">
+            <div class="tab-pane fade show active" id="overall" role="tabpanel">overall</div>
+            <div class="tab-pane fade" id="fgl" role="tabpanel">fgl</div>
+            <div class="tab-pane fade" id="race-human" role="tabpanel">race-human</div>
+            <div class="tab-pane fade" id="race-nightelf" role="tabpanel">race-nightelf</div>
+            <div class="tab-pane fade" id="race-orc" role="tabpanel">race-orc</div>
+            <div class="tab-pane fade" id="race-undead" role="tabpanel">race-undead</div>
+            <div class="tab-pane fade" id="race-random" role="tabpanel">race-random</div>
+        </div>
+        No statistics found. Please click <a href="/">here</a> to upload replays.
+        {% endif %}
+    </div>
+</div>
