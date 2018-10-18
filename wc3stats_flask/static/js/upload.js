@@ -1,5 +1,17 @@
 $(document).ready(function() {
 
+	function addHandlers(){	
+		$('.dropdown-item.listenToClick').on('click', function(event){
+			var target = event.target;
+			var dataHeaderId = target.getAttribute("data-header-id");
+
+			if(dataHeaderId !== null){
+				var dataHeaderText = target.getAttribute("data-header-text");
+				$("#" + dataHeaderId).text(dataHeaderText)
+			}
+		});
+	}
+
     function convertDataTables(){
         var datatables = $(".datatable");
 
@@ -95,6 +107,7 @@ $(document).ready(function() {
 			success : function(response) {
 				$("#bodyContainer").html(response);
 				convertDataTables();
+				addHandlers();
 			}
 		});
 	});

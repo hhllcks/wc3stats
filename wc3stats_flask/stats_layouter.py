@@ -101,8 +101,9 @@ def get_by_race_content(stats):
     return (panes, tabs)
 
 def _get_race_content(stats, racekey):
-    html = "<div class='card m-3'><div class='card-header'>By enemy race</div><div>" + _get_table_by_race(stats, f"table-{racekey}-by-race") + "</div></div>"
-    html = html + "<div class='card m-3'><div class='card-header'><div>By map</div></div><div>" + _get_table_by_map(stats, f"table-{racekey}-by-map") + "</div></div>"
+    html = f"<div class='card m-3'>{_get_race_content_race_header(stats,racekey)}<div>" + _get_race_content_race_body(stats, racekey) + "</div></div>"
+    html = html + f"<div class='card m-3'>{_get_race_content_map_header(stats,racekey)}<div>" + _get_race_content_map_body(stats, racekey) + "</div></div>"
+    
     return ({
         "element_id": f"race-{racekey}", 
         "content": html,
@@ -112,6 +113,48 @@ def _get_race_content(stats, racekey):
         "href": f"race-{racekey}",
         "text": racekey.title(),
     })
+    
+def _get_race_content_race_header(stats, racekey):
+    dropdown_items = _get_dropdown_item(f'race-{racekey}-map-dropdown-all', f"tab-table-{racekey}-by-race","All Maps", "listenToClick", f"data-header-text='By enemy race' data-header-id='race{racekey.title()}RaceHeader'")
+    for mapname in stats['map']:
+        dropdown_items = dropdown_items + _get_dropdown_item(f'race-{racekey}-map-dropdown-{mapname}', f"tab-table-{racekey}-by-race-{mapname}",ALL_MAPS[mapname], "listenToClick", f"data-header-text='By enemy race on {ALL_MAPS[mapname]}' data-header-id='race{racekey.title()}RaceHeader'")
+
+    html = f"<div class='card-header'><div class='d-flex align-items-center justify-content-between'><div id='race{racekey.title()}RaceHeader'>By enemy race</div><ul class='nav nav-pills' role='tablist'><li class='nav-item dropdown'><a class='nav-link dropdown-toggle active' data-toggle='dropdown' href='#' role='button'>Filter by map</a><div class='dropdown-menu'>{dropdown_items}</li></ul></div></div>"
+
+    return html
+
+def _get_race_content_race_body(stats, racekey):
+    html = f"<div class='tab-content' id='tabContent-{racekey}-race'>"
+
+    html = html + _get_tab_pane(f"tab-table-{racekey}-by-race", _get_table_by_race(stats, f"table-{racekey}-by-race"), True)
+
+    for mapname in stats['map']:
+        html = html + _get_tab_pane(f"tab-table-{racekey}-by-race-{mapname}",_get_table_by_race(stats['map'][mapname], f"table-{racekey}-by-race-{mapname}"), False)
+
+    html = html + "</div>"
+
+    return html
+
+def _get_race_content_map_header(stats, racekey):
+    dropdown_items = _get_dropdown_item(f'race-{racekey}-race-dropdown-all', f"tab-table-{racekey}-by-map","All Races", "listenToClick", f"data-header-text='By Map' data-header-id='race{racekey.title()}MapHeader'")
+    for race in stats['race']:
+        dropdown_items = dropdown_items + _get_dropdown_item(f'race-{racekey}-race-dropdown-{race}', f"tab-table-{racekey}-by-map-{race}",race.title(), "listenToClick", f"data-header-text='By Map against {race.title()}' data-header-id='race{racekey.title()}MapHeader'")
+
+    html = f"<div class='card-header'><div class='d-flex align-items-center justify-content-between'><div id='race{racekey.title()}MapHeader'>By map</div><ul class='nav nav-pills' role='tablist'><li class='nav-item dropdown'><a class='nav-link dropdown-toggle active' data-toggle='dropdown' href='#' role='button'>Filter by enemy race</a><div class='dropdown-menu'>{dropdown_items}</li></ul></div></div>"
+
+    return html
+
+def _get_race_content_map_body(stats, racekey):
+    html = f"<div class='tab-content' id='tabContent-{racekey}-map'>"
+
+    html = html + _get_tab_pane(f"tab-table-{racekey}-by-map", _get_table_by_map(stats, f"table-{racekey}-by-map"), True)
+
+    for race in stats['race']:
+        html = html + _get_tab_pane(f"tab-table-{racekey}-by-map-{race}",_get_table_by_map(stats['race'][race], f"table-{racekey}-by-map-{race}"), False)
+
+    html = html + "</div>"
+
+    return html
 
 def get_by_map_content(stats):
     panes = []
@@ -137,9 +180,14 @@ def _get_map_content(stats, mapname):
 def _get_table_by_map(stats, table_id):
     html = f"<table id='{table_id}' class='table table-striped table-hover table-sm datatable' style='width:100%'><thead><tr><th>Map</th><th>Wins</th><th>Losses</th><th>Win %</th><th>Avg. Length</th><th>Avg. APM</th></tr></thead><tbody>"
 
+    if 'map' in stats:
+        map_dict = 'map'
+    if 'maps' in stats:
+        map_dict = 'maps'
+
     for mapname in list(ALL_MAPS.keys()):
-        if mapname in stats['map']:
-            html = html + f"<tr><td>{ALL_MAPS[mapname]}</td><td>{stats['map'][mapname]['w']}</td><td>{stats['map'][mapname]['l']}</td><td>{stats['map'][mapname]['p']:.2%}</td><td>{stats['map'][mapname]['avg_length']}</td><td>{stats['map'][mapname]['apm']}</td></tr>"
+        if mapname in stats[map_dict]:
+            html = html + f"<tr><td>{ALL_MAPS[mapname]}</td><td>{stats[map_dict][mapname]['w']}</td><td>{stats[map_dict][mapname]['l']}</td><td>{stats[map_dict][mapname]['p']:.2%}</td><td>{stats[map_dict][mapname]['avg_length']}</td><td>{stats[map_dict][mapname]['apm']}</td></tr>"
 
     html = html + f"<tr><td>Total</td><td>{stats['w']}</td><td>{stats['l']}</td><td>{stats['p']:.2%}</td><td>{stats['avg_length']}</td><td>{stats['apm']}</td></tr>"
 
@@ -149,9 +197,14 @@ def _get_table_by_map(stats, table_id):
 def _get_table_by_race(stats, table_id):
     html = f"<table id='{table_id}' class='table table-striped table-hover table-sm datatable' style='width:100%'><thead><tr><th>vs</th><th>Wins</th><th>Losses</th><th>Win %</th><th>Avg. Length</th><th>Avg. APM</th></tr></thead><tbody>"
 
+    if 'race' in stats:
+        race_dict = 'race'
+    if 'enemy_races' in stats:
+        race_dict = 'enemy_races'
+
     for race in list(ALL_RACES.keys()):
-        if race in stats['race']:
-            html = html + f"<tr><td>{race.title()}</td><td>{stats['race'][race]['w']}</td><td>{stats['race'][race]['l']}</td><td>{stats['race'][race]['p']:.2%}</td><td>{stats['race'][race]['avg_length']}</td><td>{stats['race'][race]['apm']}</td></tr>"
+        if race in stats[race_dict]:
+            html = html + f"<tr><td>{race.title()}</td><td>{stats[race_dict][race]['w']}</td><td>{stats[race_dict][race]['l']}</td><td>{stats[race_dict][race]['p']:.2%}</td><td>{stats[race_dict][race]['avg_length']}</td><td>{stats[race_dict][race]['apm']}</td></tr>"
 
     html = html + f"<tr><td>Total</td><td>{stats['w']}</td><td>{stats['l']}</td><td>{stats['p']:.2%}</td><td>{stats['avg_length']}</td><td>{stats['apm']}</td></tr>"
 
@@ -233,8 +286,8 @@ def _get_dropdown_tab(element_id, items, text):
 
     return f"<li class='nav-item dropdown'><a class='nav-link dropdown-toggle' data-toggle='dropdown' href='#' role='button'>{text}</a><div class='dropdown-menu'>{item_string}</div></li>"
 
-def _get_dropdown_item(element_id, href, text):
-    return f"<a class='dropdown-item' role='tab' data-toggle='tab' id='{element_id}' href='#{href}'>{text}</a>"
+def _get_dropdown_item(element_id, href, text, additionalClasses="", customData=""):
+    return f"<a class='dropdown-item {additionalClasses}' role='tab' {customData} data-toggle='tab' id='{element_id}' href='#{href}'>{text}</a>"
 
 # OLD DASH LAYOUT
 def get_stats_layout(stats, rep_list):
